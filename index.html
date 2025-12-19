@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AdminCore Personal</title>
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkFkbWluQ29yZSBQcm8iLAogICJzaG9ydF9uYW1lIjogIkFkbWluQ29yZSIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjNGY0NmU1IiwKICAidGhlbWVfY29sb3IiOiAiIzRmNDZlNSIsCiAgImljb25zIjogW3sKICAgICJzcmMiOiAiaHR0cHM6Ly9jZG4taWNvbnMtcG5nLmZyZWVwaWsuY29tLzUxMi8zNjU4LzM2NTgyNTcucG5nIiwKICAgICJ0eXBlIjogImltYWdlL3BuZyIsCiAgICAic2l6ZXMiOiAiNTEyeDUxMiIKICB9XQp9">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    borderRadius: { '4xl': '2rem', '5xl': '2.5rem' }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center p-6">
+        <div class="w-full max-w-md bg-white dark:bg-slate-800 p-8 rounded-5xl shadow-2xl border dark:border-slate-700 text-center">
+            <div class="bg-indigo-600 w-16 h-16 rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl">
+                <i data-lucide="shield-check" size="32"></i>
+            </div>
+            <h1 class="text-2xl font-black mb-2">Acceso Privado</h1>
+            <p class="text-slate-500 text-sm mb-8">Ingresa tu código de seguridad personal</p>
+            <input type="password" id="pin-input" placeholder="••••" maxlength="4" class="w-full text-center text-3xl tracking-widest py-4 rounded-2xl bg-slate-100 dark:bg-slate-700 border-none focus:ring-2 focus:ring-indigo-500 outline-none mb-6">
+            <button onclick="checkPin()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition-all">Desbloquear</button>
+        </div>
+    </div>
+
+    <div id="app-screen" class="hidden min-h-screen">
+        <!-- Sidebar para Desktop -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white dark:bg-slate-900 border-r dark:border-slate-800 p-6 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+            <div class="flex items-center justify-between mb-10">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-600 p-2 rounded-xl text-white"><i data-lucide="store"></i></div>
+                    <span class="text-xl font-black">AdminCore</span>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden text-slate-400"><i data-lucide="x"></i></button>
+            </div>
+            
+            <nav class="space-y-2">
+                <button onclick="switchTab('dash')" class="nav-link active w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all">
+                    <i data-lucide="layout-dashboard"></i> <span class="text-sm font-bold">Dashboard</span>
+                </button>
+                <button onclick="switchTab('prices')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all">
+                    <i data-lucide="refresh-cw"></i> <span class="text-sm font-bold">Precios</span>
+                </button>
+                <button onclick="switchTab('products')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all">
+                    <i data-lucide="plus-circle"></i> <span class="text-sm font-bold">Productos</span>
+                </button>
+                <button onclick="switchTab('settings')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all">
+                    <i data-lucide="settings"></i> <span class="text-sm font-bold">Ajustes</span>
+                </button>
+            </nav>
+
+            <div class="absolute bottom-6 left-6 right-6 space-y-4">
+                <button onclick="toggleTheme()" class="w-full flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                    <span class="text-[10px] font-black uppercase tracking-widest">Tema</span>
+                    <i data-lucide="moon" class="dark:hidden"></i>
+                    <i data-lucide="sun" class="hidden dark:block"></i>
+                </button>
+                <button onclick="location.reload()" class="w-full py-3 text-rose-500 font-bold text-xs flex items-center justify-center gap-2">
+                    <i data-lucide="log-out" size="14"></i> Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="lg:ml-72 p-4 md:p-10">
+            <header class="flex items-center justify-between mb-8">
+                <h2 id="page-title" class="text-3xl font-black">Dashboard</h2>
+                <button onclick="toggleSidebar()" class="lg:hidden p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm"><i data-lucide="menu"></i></button>
+            </header>
+
+            <!-- Notification -->
+            <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] hidden animate-in slide-in-from-top-4">
+                <div class="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-2xl flex items-center gap-3">
+                    <i data-lucide="check-circle" size="18"></i>
+                    <span id="toast-msg">Mensaje</span>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div id="tab-dash" class="tab-content space-y-6">
+                <div class="bg-gradient-to-br from-indigo-600 to-violet-700 p-8 rounded-5xl text-white shadow-2xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h3 class="text-3xl font-black mb-2">¡Bienvenido!</h3>
+                        <p class="opacity-80 mb-6 text-sm">Tu panel personal está listo para operar.</p>
+                        <button id="install-btn" class="hidden px-6 py-3 bg-white text-indigo-700 rounded-2xl font-black text-sm shadow-xl flex items-center gap-2 transition-transform hover:scale-105">
+                            <i data-lucide="download"></i> Instalar App
+                        </button>
+                    </div>
+                    <i data-lucide="zap" class="absolute right-[-20px] bottom-[-20px] w-48 h-48 opacity-10"></i>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-4xl border dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Items</p>
+                        <p class="text-2xl font-black">1.2k</p>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-4xl border dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                        <p class="text-2xl font-black text-emerald-500">Live</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-prices" class="tab-content hidden animate-in fade-in duration-300">
+                <div class="bg-white dark:bg-slate-800 p-8 rounded-5xl shadow-sm border dark:border-slate-700">
+                    <div class="space-y-6">
+                        <input id="price-provider" type="text" placeholder="Proveedor" class="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-700 border-none outline-none dark:text-white">
+                        <textarea id="price-list" rows="6" placeholder="Harina $20.00..." class="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-700 border-none outline-none font-mono text-sm dark:text-white"></textarea>
+                        <div class="flex gap-4">
+                            <button onclick="clearForm('prices')" class="flex-1 py-4 bg-slate-100 dark:bg-slate-700 rounded-2xl font-bold flex items-center justify-center gap-2"><i data-lucide="trash-2" size="18"></i> Limpiar</button>
+                            <button onclick="sendWebhook('prices')" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><i data-lucide="send" size="18"></i> Enviar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-products" class="tab-content hidden animate-in fade-in duration-300">
+                <div class="bg-white dark:bg-slate-800 p-8 rounded-5xl shadow-sm border dark:border-slate-700">
+                    <div class="space-y-4">
+                        <input id="prod-name" type="text" placeholder="Nombre Producto" class="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-700 border-none outline-none dark:text-white">
+                        <div class="grid grid-cols-2 gap-4">
+                            <input id="prod-pres" type="text" placeholder="Pres (1kg)" class="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-700 border-none outline-none dark:text-white">
+                            <input id="prod-price" type="number" placeholder="Precio" class="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-700 border-none outline-none dark:text-white font-bold">
+                        </div>
+                        <div class="flex gap-4 pt-4">
+                            <button onclick="clearForm('products')" class="flex-1 py-4 bg-slate-100 dark:bg-slate-700 rounded-2xl font-bold flex items-center justify-center gap-2"><i data-lucide="trash-2" size="18"></i> Limpiar</button>
+                            <button onclick="sendWebhook('products')" class="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><i data-lucide="plus" size="18"></i> Registrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-settings" class="tab-content hidden animate-in fade-in duration-300">
+                <div class="bg-white dark:bg-slate-800 p-8 rounded-5xl border dark:border-slate-700 space-y-6">
+                    <h3 class="font-black text-lg">Configuración de Webhooks</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Endpoint Precios</label>
+                            <input id="url-prices" type="url" class="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-700 outline-none font-mono text-xs mt-1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Endpoint Productos</label>
+                            <input id="url-products" type="url" class="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-700 outline-none font-mono text-xs mt-1">
+                        </div>
+                        <button onclick="saveSettings()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black">Guardar Localmente</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Configuración Inicial
+        const MASTER_PIN = "1234"; // CAMBIA ESTO POR TU PIN
+        let deferredPrompt;
+
+        // Cargar Webhooks guardados
+        const loadSettings = () => {
+            const saved = JSON.parse(localStorage.getItem('admin_webhooks') || '{"prices":"","products":""}');
+            document.getElementById('url-prices').value = saved.prices;
+            document.getElementById('url-products').value = saved.products;
+            return saved;
+        };
+
+        const saveSettings = () => {
+            const config = {
+                prices: document.getElementById('url-prices').value,
+                products: document.getElementById('url-products').value
+            };
+            localStorage.setItem('admin_webhooks', JSON.stringify(config));
+            showToast("Configuración guardada");
+        };
+
+        // Seguridad
+        const checkPin = () => {
+            const input = document.getElementById('pin-input').value;
+            if(input === MASTER_PIN) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                lucide.createIcons();
+                loadSettings();
+            } else {
+                alert("PIN Incorrecto");
+                document.getElementById('pin-input').value = "";
+            }
+        };
+
+        // Navegación
+        const switchTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg');
+                el.classList.add('text-slate-500');
+            });
+            event.currentTarget.classList.add('bg-indigo-600', 'text-white', 'shadow-lg');
+            event.currentTarget.classList.remove('text-slate-500');
+
+            document.getElementById('page-title').innerText = tabId.charAt(0).toUpperCase() + tabId.slice(1);
+            if(window.innerWidth < 1024) toggleSidebar();
+        };
+
+        const toggleSidebar = () => {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        };
+
+        const toggleTheme = () => {
+            document.documentElement.classList.toggle('dark');
+        };
+
+        // Utilidades
+        const showToast = (msg) => {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        };
+
+        const clearForm = (type) => {
+            if(type === 'prices') {
+                document.getElementById('price-provider').value = "";
+                document.getElementById('price-list').value = "";
+            } else {
+                document.getElementById('prod-name').value = "";
+                document.getElementById('prod-pres').value = "";
+                document.getElementById('prod-price').value = "";
+            }
+            showToast("Formulario limpio");
+        };
+
+        const sendWebhook = async (type) => {
+            const config = loadSettings();
+            const url = type === 'prices' ? config.prices : config.products;
+            
+            if(!url) return showToast("Configura el Webhook primero");
+
+            showToast("Enviando...");
+            try {
+                // Simulación de envío (Fetch)
+                console.log("Enviando a: " + url);
+                await new Promise(r => setTimeout(r, 1000));
+                showToast("¡Envío Exitoso!");
+                clearForm(type);
+            } catch(e) {
+                showToast("Error en el envío");
+            }
+        };
+
+        // Lógica PWA de Instalación
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-btn').classList.remove('hidden');
+        });
+
+        document.getElementById('install-btn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    deferredPrompt = null;
+                    document.getElementById('install-btn').classList.add('hidden');
+                }
+            }
+        });
+
+        // Inicializar iconos al cargar
+        window.onload = () => lucide.createIcons();
+    </script>
+</body>
+</html>
+
