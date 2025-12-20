@@ -5,13 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AdminCore Cloud</title>
     
-    <!-- Configuración PWA Crítica -->
+    <!-- Meta etiquetas para PWA y Móvil -->
+    <meta name="theme-color" content="#4f46e5">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="description" content="Sistema de gestión logística AdminCore">
+    
+    <!-- Icono para Apple -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3658/3658257.png">
-    <link rel="manifest" href='data:application/json,{"name":"AdminCore Cloud","short_name":"AdminCore","start_url":"/","display":"standalone","background_color":"#4f46e5","theme_color":"#4f46e5","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3658/3658257.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}'>
+
+    <!-- Web App Manifest (Formato Estricto para Chrome) -->
+    <link rel="manifest" id="pwa-manifest">
+    <script>
+        const manifest = {
+            "name": "AdminCore Cloud",
+            "short_name": "AdminCore",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#4f46e5",
+            "description": "Panel logístico privado AdminCore",
+            "icons": [
+                {
+                    "src": "https://cdn-icons-png.flaticon.com/512/3658/3658257.png",
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                }
+            ]
+        };
+        const stringManifest = JSON.stringify(manifest);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(blob);
+        document.querySelector('#pwa-manifest').setAttribute('href', manifestURL);
+    </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -36,95 +64,114 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        let currentUser = null;
-
-        // Registrar Service Worker para habilitar instalación PWA
+        // Registro de Service Worker mejorado para Chrome
         if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('install', e => self.skipWaiting());
-                self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
-            `;
-            const blob = new Blob([swCode], {type: 'application/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(blob));
+            window.addEventListener('load', () => {
+                const swCode = `
+                    const CACHE_NAME = 'admincore-v1';
+                    self.addEventListener('install', event => {
+                        event.waitUntil(self.skipWaiting());
+                    });
+                    self.addEventListener('activate', event => {
+                        event.waitUntil(self.clients.claim());
+                    });
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+                    });
+                `;
+                const blob = new Blob([swCode], {type: 'application/javascript'});
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl)
+                    .then(() => console.log('Service Worker Registrado'))
+                    .catch(err => console.log('Error SW:', err));
+            });
         }
 
-        window.loginWithGoogle = async () => {
-            try {
-                // Verificación de protocolo
-                if (window.location.protocol === 'file:') {
-                    alert("Error: Firebase Authentication requiere HTTPS. Por favor, sube el archivo a GitHub Pages o usa un servidor local.");
-                    return;
+        // Variable para capturar el evento de instalación
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Mostrar un botón de instalación personalizado si Chrome lo permite
+            const installBtn = document.getElementById('custom-install-btn');
+            if(installBtn) installBtn.classList.remove('hidden');
+        });
+
+        window.triggerInstall = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('custom-install-btn').classList.add('hidden');
                 }
-                const result = await signInWithPopup(auth, provider);
-                showToast("Bienvenido " + result.user.displayName);
-            } catch (error) {
-                console.error(error);
-                showToast("Error de Auth: Verifica dominios autorizados en Firebase");
+                deferredPrompt = null;
             }
         };
 
-        window.logout = () => signOut(auth).then(() => showToast("Sesión cerrada"));
+        // Lógica de Autenticación
+        window.loginWithGoogle = async () => {
+            if (window.location.protocol === 'file:') {
+                alert("Debes subir este archivo a GitHub Pages para que el Login funcione.");
+                return;
+            }
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error(error);
+                showToast("Error: Revisa Dominios Autorizados en Firebase");
+            }
+        };
+
+        window.logout = () => signOut(auth);
 
         onAuthStateChanged(auth, async (user) => {
             const loginUI = document.getElementById('auth-screen');
             const mainUI = document.getElementById('app-screen');
             if (user) {
-                currentUser = user;
                 document.getElementById('user-img').src = user.photoURL;
                 document.getElementById('user-name').innerText = user.displayName;
                 loginUI.classList.add('hidden');
                 mainUI.classList.remove('hidden');
-                await loadCloudSettings();
+                
+                // Cargar datos de Firestore
+                const docSnap = await getDoc(doc(db, "users", user.uid));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('url-prices').value = data.pricesUrl || "";
+                    document.getElementById('url-products').value = data.productsUrl || "";
+                }
                 lucide.createIcons();
             } else {
-                currentUser = null;
                 loginUI.classList.remove('hidden');
                 mainUI.classList.add('hidden');
                 lucide.createIcons();
             }
         });
 
-        async function loadCloudSettings() {
-            if (!currentUser) return;
-            try {
-                const docSnap = await getDoc(doc(db, "users", currentUser.uid));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.getElementById('url-prices').value = data.pricesUrl || "";
-                    document.getElementById('url-products').value = data.productsUrl || "";
-                }
-            } catch (e) { console.error(e); }
-        }
-
         window.saveSettings = async () => {
-            if (!currentUser) return;
+            const user = auth.currentUser;
+            if (!user) return;
             const btn = document.getElementById('btn-save');
             btn.innerText = "Guardando...";
             try {
-                await setDoc(doc(db, "users", currentUser.uid), {
+                await setDoc(doc(db, "users", user.uid), {
                     pricesUrl: document.getElementById('url-prices').value,
                     productsUrl: document.getElementById('url-products').value,
                     updatedAt: new Date()
                 });
                 showToast("Sincronizado");
-            } catch (e) { showToast("Error al guardar"); }
+            } catch (e) { showToast("Error Firestore"); }
             btn.innerText = "Guardar en mi Perfil";
         };
 
         window.sendToWebhook = async (type) => {
             const url = type === 'prices' ? document.getElementById('url-prices').value : document.getElementById('url-products').value;
-            if (!url) { showToast("Falta URL"); return; }
+            if (!url) { showToast("Configura URL primero"); return; }
             
-            const data = type === 'prices' ? {
-                tipo: "Precios",
-                usuario: currentUser.email,
-                proveedor: document.getElementById('p-prov').value,
-                lista: document.getElementById('p-list').value
-            } : {
-                tipo: "Producto",
-                usuario: currentUser.email,
-                nombre: document.getElementById('pr-name').value,
-                precio: document.getElementById('pr-cost').value
+            const data = {
+                tipo: type,
+                usuario: auth.currentUser.email,
+                payload: type === 'prices' ? document.getElementById('p-list').value : document.getElementById('pr-name').value
             };
 
             showToast("Enviando...");
@@ -141,7 +188,6 @@
             setTimeout(() => toast.classList.add('hidden'), 3000);
         };
 
-        // Manejo de Tabs
         window.switchTab = (tab) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.getElementById('tab-' + tab).classList.remove('hidden');
@@ -158,85 +204,95 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .tab-content { animation: slideIn 0.2s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-content { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 select-none">
+<body class="bg-slate-50 text-slate-900">
 
-    <!-- LOGIN SCREEN -->
-    <div id="auth-screen" class="min-h-screen flex items-center justify-center p-6 bg-slate-950">
+    <!-- PANTALLA DE ACCESO -->
+    <div id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-950">
         <div class="w-full max-w-md bg-white p-10 rounded-[2.5rem] shadow-2xl text-center">
             <div class="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl">
                 <i data-lucide="shield-check" size="32"></i>
             </div>
-            <h1 class="text-2xl font-black mb-2 tracking-tighter">AdminCore Cloud</h1>
-            <p class="text-slate-400 mb-8 text-sm">Ingresa para sincronizar tus datos</p>
-            <button onclick="loginWithGoogle()" class="w-full py-4 border-2 border-slate-100 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all">
+            <h1 class="text-2xl font-black mb-2 tracking-tighter italic">AdminCore Cloud</h1>
+            <p class="text-slate-400 mb-8 text-sm font-medium">Panel de Gestión Privado</p>
+            
+            <button onclick="loginWithGoogle()" class="w-full py-4 border-2 border-slate-100 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all mb-4">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-5">
-                Continuar con Google
+                Acceder con Google
             </button>
-            <p class="mt-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold">Logística Privada</p>
+
+            <!-- Botón de instalación (Solo aparece en Chrome si es instalable) -->
+            <button id="custom-install-btn" onclick="triggerInstall()" class="hidden w-full py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-indigo-100 transition-all">
+                <i data-lucide="download" size="14"></i> Instalar Aplicación
+            </button>
         </div>
     </div>
 
-    <!-- MAIN APP SCREEN -->
-    <div id="app-screen" class="hidden min-h-screen">
+    <!-- PANTALLA PRINCIPAL -->
+    <div id="app-screen" class="hidden min-h-screen pb-10">
         <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] hidden">
             <div class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold shadow-2xl border border-slate-700 text-sm">
                 <span id="toast-msg"></span>
             </div>
         </div>
 
-        <header class="p-5 flex items-center justify-between bg-white/80 backdrop-blur-md border-b sticky top-0 z-40">
+        <header class="p-5 flex items-center justify-between bg-white border-b sticky top-0 z-40">
             <div class="flex items-center gap-2">
-                <div class="bg-indigo-600 p-1.5 rounded-lg text-white"><i data-lucide="zap" size="18"></i></div>
-                <span class="font-black text-lg tracking-tight">AdminCore</span>
+                <div class="bg-indigo-600 p-1.5 rounded-lg text-white shadow-md shadow-indigo-200"><i data-lucide="zap" size="18"></i></div>
+                <span class="font-black text-lg tracking-tight italic">AdminCore</span>
             </div>
             <div class="flex items-center gap-3">
                 <img id="user-img" class="w-8 h-8 rounded-full border border-indigo-100 shadow-sm">
-                <button onclick="logout()" class="text-slate-400 p-1"><i data-lucide="log-out" size="18"></i></button>
+                <button onclick="logout()" class="text-slate-400 p-1 hover:text-rose-500 transition-colors"><i data-lucide="log-out" size="18"></i></button>
             </div>
         </header>
 
         <main class="p-4 max-w-md mx-auto space-y-5">
-            <!-- Navigation -->
-            <div class="flex p-1 bg-slate-200/50 rounded-2xl">
-                <button onclick="switchTab('prices')" id="btn-tab-prices" class="tab-trigger flex-1 py-2.5 rounded-xl font-bold text-xs bg-white shadow-sm transition-all">Precios</button>
-                <button onclick="switchTab('products')" id="btn-tab-products" class="tab-trigger flex-1 py-2.5 rounded-xl font-bold text-xs text-slate-500 transition-all">Productos</button>
-                <button onclick="switchTab('config')" id="btn-tab-config" class="tab-trigger flex-1 py-2.5 rounded-xl font-bold text-xs text-slate-500 transition-all">Config</button>
+            <div class="flex p-1 bg-slate-200/50 rounded-2xl border border-slate-200">
+                <button onclick="switchTab('prices')" id="btn-tab-prices" class="tab-trigger flex-1 py-2.5 rounded-xl font-bold text-xs bg-white shadow-sm">Precios</button>
+                <button onclick="switchTab('products')" id="btn-tab-products" class="tab-trigger flex-1 py-2.5 rounded-xl font-bold text-xs text-slate-500">Productos</button>
+                <button onclick="switchTab('config')" id="btn-tab-config" class="tab-trigger flex-1 py-2.5 rounded-xl font-bold text-xs text-slate-500">Config</button>
             </div>
 
             <!-- Tab: Precios -->
             <section id="tab-prices" class="tab-content space-y-4">
                 <div class="bg-white p-5 rounded-[2rem] border shadow-sm space-y-4">
-                    <input id="p-prov" type="text" placeholder="Proveedor" class="w-full px-5 py-3.5 rounded-xl bg-slate-50 border-none outline-none text-sm">
-                    <textarea id="p-list" rows="6" placeholder="Producto $Precio..." class="w-full px-5 py-3.5 rounded-xl bg-slate-50 border-none outline-none text-sm font-mono"></textarea>
+                    <input id="p-prov" type="text" placeholder="Nombre Proveedor" class="w-full px-5 py-3.5 rounded-xl bg-slate-50 border-none outline-none text-sm placeholder:text-slate-300">
+                    <textarea id="p-list" rows="6" placeholder="Harina $1200&#10;Aceite $2500..." class="w-full px-5 py-3.5 rounded-xl bg-slate-50 border-none outline-none text-sm font-mono placeholder:text-slate-300"></textarea>
                     <button onclick="sendToWebhook('prices')" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg shadow-indigo-100 active:scale-95 transition-transform flex items-center justify-center gap-2">
-                        <i data-lucide="send-horizontal" size="16"></i> Enviar Lista
+                        <i data-lucide="send" size="16"></i> Enviar a Webhook
                     </button>
                 </div>
             </section>
 
             <!-- Tab: Productos -->
             <section id="tab-products" class="tab-content hidden space-y-4">
-                <div class="bg-white p-5 rounded-[2rem] border shadow-sm space-y-4">
+                <div class="bg-white p-5 rounded-[2rem] border shadow-sm space-y-4 text-center">
                     <input id="pr-name" type="text" placeholder="Nombre del Producto" class="w-full px-5 py-3.5 rounded-xl bg-slate-50 outline-none border-none text-sm">
-                    <input id="pr-cost" type="number" placeholder="Precio Final ($)" class="w-full px-5 py-3.5 rounded-xl bg-slate-50 outline-none border-none font-bold text-base">
-                    <button onclick="sendToWebhook('products')" class="w-full py-4 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-100 active:scale-95">Registrar</button>
+                    <input id="pr-cost" type="number" placeholder="0.00" class="w-full px-5 py-4 rounded-xl bg-slate-50 outline-none border-none font-black text-2xl text-center">
+                    <button onclick="sendToWebhook('products')" class="w-full py-4 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-100 active:scale-95">Registrar Ítem</button>
                 </div>
             </section>
 
             <!-- Tab: Config -->
             <section id="tab-config" class="tab-content hidden space-y-4">
-                <div class="bg-white p-6 rounded-[2rem] border shadow-sm space-y-5 text-center">
-                    <h3 class="font-black text-sm uppercase tracking-widest text-slate-400">Ajustes de Nube</h3>
-                    <input id="url-prices" type="url" placeholder="URL Webhook Precios" class="w-full px-5 py-3 rounded-xl bg-slate-100 outline-none text-[10px] font-mono">
-                    <input id="url-products" type="url" placeholder="URL Webhook Productos" class="w-full px-5 py-3 rounded-xl bg-slate-100 outline-none text-[10px] font-mono">
-                    <button id="btn-save" onclick="saveSettings()" class="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-xs active:scale-95 transition-all">Sincronizar Datos</button>
+                <div class="bg-white p-6 rounded-[2rem] border shadow-sm space-y-5">
+                    <h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 text-center">Ajustes Cloud</h3>
+                    <div class="space-y-3">
+                        <input id="url-prices" type="url" placeholder="Webhook URL (Precios)" class="w-full px-5 py-3 rounded-xl bg-slate-100 outline-none text-[10px] font-mono text-indigo-600">
+                        <input id="url-products" type="url" placeholder="Webhook URL (Productos)" class="w-full px-5 py-3 rounded-xl bg-slate-100 outline-none text-[10px] font-mono text-indigo-600">
+                    </div>
+                    <button id="btn-save" onclick="saveSettings()" class="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-xs shadow-xl active:scale-95">Sincronizar Perfil</button>
                 </div>
-                <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                    <p class="text-[10px] text-indigo-600 font-semibold leading-tight">Sesión activa como: <br><span id="user-name" class="font-black text-indigo-800 text-xs"></span></p>
+                <div class="p-4 bg-white rounded-2xl border border-slate-100 flex items-center gap-3">
+                    <div class="p-2 bg-slate-50 rounded-lg text-slate-400"><i data-lucide="user" size="16"></i></div>
+                    <div class="flex-1">
+                        <p id="user-name" class="font-bold text-xs text-slate-700"></p>
+                        <p class="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Usuario Autenticado</p>
+                    </div>
                 </div>
             </section>
         </main>
