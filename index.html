@@ -55,17 +55,16 @@
 
             <div class="relative py-2">
                 <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
-                <div class="relative flex justify-center text-[10px] uppercase font-bold text-slate-300 bg-white px-2">O acceso rápido</div>
+                <div class="relative flex justify-center text-[10px] uppercase font-bold text-slate-300 bg-white px-2">Acceso Rápido</div>
             </div>
 
             <button onclick="loginWithGoogle()" class="w-full py-4 border-2 border-slate-100 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all text-sm">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-5" alt="Google">
-                Acceder con Google
+                Google Login
             </button>
 
-            <!-- BOTÓN MÁGICO DE INSTALACIÓN -->
-            <button id="install-btn-auth" onclick="triggerInstall()" class="hidden w-full py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-indigo-100 transition-all">
-                <i data-lucide="download" size="14"></i> Instalar en el dispositivo
+            <button id="install-btn-auth" onclick="triggerInstall()" class="hidden w-full py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-indigo-100">
+                <i data-lucide="download" size="14"></i> Instalar App
             </button>
 
             <div class="text-center">
@@ -83,7 +82,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <img id="user-img" class="w-9 h-9 rounded-full border-2 border-indigo-50 bg-slate-100">
-                <button onclick="logout()" class="p-2 text-slate-300 hover:text-rose-500 transition-colors"><i data-lucide="log-out" size="20"></i></button>
+                <button onclick="logout()" class="p-2 text-slate-300 hover:text-rose-500"><i data-lucide="log-out" size="20"></i></button>
             </div>
         </header>
 
@@ -112,11 +111,11 @@
 
             <section id="tab-config" class="tab-content hidden page-transition space-y-4">
                 <div class="bg-white p-7 rounded-[2.5rem] border shadow-sm space-y-6">
-                    <h2 class="font-black text-center italic">Ajustes Cloud</h2>
+                    <h2 class="font-black text-center italic text-slate-700">Ajustes Cloud</h2>
                     <div class="space-y-3">
                         <input id="url-prices" type="url" placeholder="Webhook Precios" class="input-field font-mono text-[10px]">
                         <input id="url-products" type="url" placeholder="Webhook Productos" class="input-field font-mono text-[10px]">
-                        <button id="btn-save-cloud" onclick="saveSettings()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase">Guardar en Perfil</button>
+                        <button id="btn-save-cloud" onclick="saveSettings()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase">Sincronizar Cloud</button>
                     </div>
                 </div>
                 <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
@@ -139,7 +138,7 @@
             signInWithEmailAndPassword, 
             createUserWithEmailAndPassword 
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA8YJqgIPcruAlkuB99zIwXoWcLgc75bn0",
@@ -156,19 +155,39 @@
         const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
 
-        // --- MANEJO DE RESULTADOS DE REDIRECCIÓN (Para PWA instalada) ---
+        // --- MANEJO DE REDIRECCION ---
         window.addEventListener('load', async () => {
             try {
                 const result = await getRedirectResult(auth);
                 if (result) {
-                    showToast("Sesión iniciada correctamente");
+                    showToast("Login exitoso");
+                    await checkOrCreateUser(result.user);
                 }
-            } catch (error) {
-                console.error("Error en redirect result:", error);
-            }
+            } catch (error) { console.error(error); }
         });
 
-        // --- LÓGICA DE INSTALACIÓN ---
+        async function checkOrCreateUser(user) {
+            if (!user) return;
+            const userRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(userRef);
+            
+            // Si el usuario no existe en la BDD, lo creamos vacío para que aparezca en la consola
+            if (!docSnap.exists()) {
+                await setDoc(userRef, {
+                    email: user.email,
+                    pricesUrl: "",
+                    productsUrl: "",
+                    createdAt: new Date()
+                });
+                console.log("Nuevo usuario registrado en Firestore");
+            } else {
+                // Si existe, cargamos sus URLs en los campos
+                document.getElementById('url-prices').value = docSnap.data().pricesUrl || "";
+                document.getElementById('url-products').value = docSnap.data().productsUrl || "";
+            }
+        }
+
+        // --- PWA INSTALL ---
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -201,25 +220,15 @@
             try {
                 if(isRegisterMode) await createUserWithEmailAndPassword(auth, email, pass);
                 else await signInWithEmailAndPassword(auth, email, pass);
-            } catch (error) { showToast(error.message); }
+            } catch (error) { showToast("Error: " + error.message); }
         };
 
         window.loginWithGoogle = async () => {
-            // DETECTAR SI ES PWA INSTALADA O NAVEGADOR MÓVIL
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-            
             try {
-                if (isStandalone) {
-                    // SI ES APP INSTALADA: REDIRECCIONAR (EVITA ERROR DE POPUP)
-                    await signInWithRedirect(auth, googleProvider);
-                } else {
-                    // SI ES NAVEGADOR: USAR POPUP NORMAL
-                    await signInWithPopup(auth, googleProvider);
-                }
-            } catch (e) { 
-                console.error(e);
-                showToast("Error de acceso. Intenta con correo.");
-            }
+                if (isStandalone) await signInWithRedirect(auth, googleProvider);
+                else await signInWithPopup(auth, googleProvider);
+            } catch (e) { showToast("Error de acceso"); }
         };
 
         window.logout = () => signOut(auth);
@@ -229,15 +238,10 @@
             const mainUI = document.getElementById('app-screen');
             if (user) {
                 document.getElementById('user-img').src = user.photoURL || "https://ui-avatars.com/api/?name=" + user.email;
-                document.getElementById('user-display-name').innerText = "Usuario: " + (user.displayName || user.email);
+                document.getElementById('user-display-name').innerText = user.email;
                 loginUI.classList.add('hidden');
                 mainUI.classList.remove('hidden');
-                
-                const docSnap = await getDoc(doc(db, "users", user.uid));
-                if (docSnap.exists()) {
-                    document.getElementById('url-prices').value = docSnap.data().pricesUrl || "";
-                    document.getElementById('url-products').value = docSnap.data().productsUrl || "";
-                }
+                await checkOrCreateUser(user); // Sincroniza al entrar
                 lucide.createIcons();
             } else {
                 loginUI.classList.remove('hidden');
@@ -246,23 +250,29 @@
             }
         });
 
-        // --- LOGICA DE NEGOCIO ---
+        // --- LOGICA BDD ---
         window.saveSettings = async () => {
             const user = auth.currentUser;
             if(!user) return;
+            const btn = document.getElementById('btn-save-cloud');
+            btn.innerText = "GUARDANDO...";
             try {
                 await setDoc(doc(db, "users", user.uid), {
                     pricesUrl: document.getElementById('url-prices').value,
                     productsUrl: document.getElementById('url-products').value,
                     updatedAt: new Date()
-                });
-                showToast("Perfil guardado");
-            } catch (e) { showToast("Error Firestore"); }
+                }, { merge: true }); // Merge evita borrar otros campos
+                showToast("¡Sincronizado con Firebase!");
+            } catch (e) { 
+                console.error(e);
+                showToast("Error: Revisa las reglas de Firestore"); 
+            }
+            btn.innerText = "SINCRONIZAR CLOUD";
         };
 
         window.sendToWebhook = async (type) => {
             const url = type === 'prices' ? document.getElementById('url-prices').value : document.getElementById('url-products').value;
-            if(!url) return showToast("Configura el Webhook primero");
+            if(!url) return showToast("Falta configurar URL");
             
             const data = type === 'prices' ? {
                 tipo: "Precios",
@@ -279,7 +289,7 @@
             showToast("Enviando...");
             try {
                 await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-                showToast("¡Sincronizado!");
+                showToast("Enviado a Webhook");
             } catch (e) { showToast("Error de red"); }
         };
 
@@ -298,7 +308,7 @@
             lucide.createIcons();
         };
 
-        // PWA Manifest dinámico
+        // PWA Config
         const manifest = {
             "name": "AdminCore Cloud",
             "short_name": "AdminCore",
@@ -306,12 +316,7 @@
             "display": "standalone",
             "background_color": "#020617",
             "theme_color": "#4f46e5",
-            "icons": [{
-                "src": "https://cdn-icons-png.flaticon.com/512/3658/3658257.png",
-                "sizes": "512x512",
-                "type": "image/png",
-                "purpose": "any maskable"
-            }]
+            "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/3658/3658257.png", "sizes": "512x512", "type": "image/png"}]
         };
         document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'})));
         
