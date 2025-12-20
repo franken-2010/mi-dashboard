@@ -29,14 +29,14 @@
 </head>
 <body class="bg-slate-50 text-slate-900 overflow-x-hidden">
 
-    <!-- TOAST NOTIFICATION -->
+    <!-- NOTIFICACIONES -->
     <div id="toast" class="fixed top-12 left-1/2 -translate-x-1/2 z-[100] hidden">
         <div class="bg-slate-900 text-white px-6 py-3 rounded-full font-bold shadow-2xl flex items-center gap-3 border border-slate-700 text-sm whitespace-nowrap">
             <i data-lucide="info" size="18" class="text-indigo-400"></i> <span id="toast-msg"></span>
         </div>
     </div>
 
-    <!-- PANTALLA DE ACCESO (LOGIN/REGISTRO) -->
+    <!-- PANTALLA DE ACCESO -->
     <div id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-950">
         <div class="w-full max-w-md bg-white p-8 rounded-[2.5rem] shadow-2xl space-y-6 page-transition">
             <div class="text-center">
@@ -55,15 +55,15 @@
 
             <div class="relative py-2">
                 <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
-                <div class="relative flex justify-center text-[10px] uppercase font-bold text-slate-300 bg-white px-2">O bien</div>
+                <div class="relative flex justify-center text-[10px] uppercase font-bold text-slate-300 bg-white px-2">O acceso rápido</div>
             </div>
 
             <button onclick="loginWithGoogle()" class="w-full py-4 border-2 border-slate-100 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all text-sm">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-5" alt="Google">
-                Google Login
+                Acceder con Google
             </button>
 
-            <!-- BOTÓN MÁGICO DE INSTALACIÓN (LOGIN) -->
+            <!-- BOTÓN MÁGICO DE INSTALACIÓN -->
             <button id="install-btn-auth" onclick="triggerInstall()" class="hidden w-full py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-indigo-100 transition-all">
                 <i data-lucide="download" size="14"></i> Instalar en el dispositivo
             </button>
@@ -74,7 +74,7 @@
         </div>
     </div>
 
-    <!-- PANTALLA PRINCIPAL (APP) -->
+    <!-- PANTALLA PRINCIPAL -->
     <div id="app-screen" class="hidden min-h-screen flex flex-col">
         <header class="p-6 pb-4 flex items-center justify-between bg-white border-b sticky top-0 z-40">
             <div class="flex items-center gap-2">
@@ -94,38 +94,31 @@
         </nav>
 
         <main class="flex-1 p-6 max-w-xl mx-auto w-full space-y-6">
-            
             <section id="tab-prices" class="tab-content page-transition space-y-4">
                 <div class="bg-white p-6 rounded-[2.5rem] border shadow-sm space-y-4">
-                    <input id="p-prov" type="text" placeholder="Nombre del Proveedor" class="input-field">
-                    <textarea id="p-list" rows="8" placeholder="Producto $Precio..." class="input-field font-mono text-xs"></textarea>
+                    <input id="p-prov" type="text" placeholder="Proveedor" class="input-field">
+                    <textarea id="p-list" rows="8" placeholder="Producto $000..." class="input-field font-mono text-xs"></textarea>
                     <button onclick="sendToWebhook('prices')" class="btn-primary"><i data-lucide="send" size="18"></i> Enviar Lista</button>
                 </div>
             </section>
 
             <section id="tab-products" class="tab-content hidden page-transition space-y-4">
                 <div class="bg-white p-6 rounded-[2.5rem] border shadow-sm space-y-5 text-center">
-                    <input id="pr-name" type="text" placeholder="Nombre comercial" class="input-field">
-                    <input id="pr-cost" type="number" placeholder="Precio final" class="input-field font-black text-center text-lg">
-                    <button onclick="sendToWebhook('products')" class="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-100">Registrar Ítem</button>
+                    <input id="pr-name" type="text" placeholder="Nombre ítem" class="input-field">
+                    <input id="pr-cost" type="number" placeholder="Precio" class="input-field font-black text-center text-lg">
+                    <button onclick="sendToWebhook('products')" class="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-100">Registrar</button>
                 </div>
             </section>
 
             <section id="tab-config" class="tab-content hidden page-transition space-y-4">
                 <div class="bg-white p-7 rounded-[2.5rem] border shadow-sm space-y-6">
-                    <h2 class="font-black text-center italic">Ajustes de Nube</h2>
+                    <h2 class="font-black text-center italic">Ajustes Cloud</h2>
                     <div class="space-y-3">
                         <input id="url-prices" type="url" placeholder="Webhook Precios" class="input-field font-mono text-[10px]">
                         <input id="url-products" type="url" placeholder="Webhook Productos" class="input-field font-mono text-[10px]">
-                        <button id="btn-save-cloud" onclick="saveSettings()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase shadow-xl">Guardar Configuración</button>
+                        <button id="btn-save-cloud" onclick="saveSettings()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase">Guardar en Perfil</button>
                     </div>
-
-                    <!-- BOTÓN MÁGICO DE INSTALACIÓN (PERFIL) -->
-                    <button id="install-btn-app" onclick="triggerInstall()" class="hidden w-full py-4 bg-indigo-50 text-indigo-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 border border-indigo-100">
-                        <i data-lucide="smartphone" size="16"></i> Instalar Aplicación en Celular
-                    </button>
                 </div>
-                
                 <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
                     <p id="user-display-name" class="text-[10px] text-indigo-700 font-bold text-center"></p>
                 </div>
@@ -135,7 +128,17 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            signInWithRedirect, 
+            getRedirectResult, 
+            onAuthStateChanged, 
+            signOut, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -153,27 +156,32 @@
         const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
 
-        // --- LÓGICA DE INSTALACIÓN PWA ---
+        // --- MANEJO DE RESULTADOS DE REDIRECCIÓN (Para PWA instalada) ---
+        window.addEventListener('load', async () => {
+            try {
+                const result = await getRedirectResult(auth);
+                if (result) {
+                    showToast("Sesión iniciada correctamente");
+                }
+            } catch (error) {
+                console.error("Error en redirect result:", error);
+            }
+        });
+
+        // --- LÓGICA DE INSTALACIÓN ---
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Mostrar los botones de instalación si Chrome lo permite
             document.getElementById('install-btn-auth').classList.remove('hidden');
-            document.getElementById('install-btn-app').classList.remove('hidden');
         });
 
         window.triggerInstall = async () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('install-btn-auth').classList.add('hidden');
-                    document.getElementById('install-btn-app').classList.add('hidden');
-                }
+                if (outcome === 'accepted') document.getElementById('install-btn-auth').classList.add('hidden');
                 deferredPrompt = null;
-            } else {
-                showToast("Usa el menú de Chrome: 'Instalar aplicación'");
             }
         };
 
@@ -196,7 +204,24 @@
             } catch (error) { showToast(error.message); }
         };
 
-        window.loginWithGoogle = () => signInWithPopup(auth, googleProvider).catch(e => showToast("Error Popup Google"));
+        window.loginWithGoogle = async () => {
+            // DETECTAR SI ES PWA INSTALADA O NAVEGADOR MÓVIL
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            
+            try {
+                if (isStandalone) {
+                    // SI ES APP INSTALADA: REDIRECCIONAR (EVITA ERROR DE POPUP)
+                    await signInWithRedirect(auth, googleProvider);
+                } else {
+                    // SI ES NAVEGADOR: USAR POPUP NORMAL
+                    await signInWithPopup(auth, googleProvider);
+                }
+            } catch (e) { 
+                console.error(e);
+                showToast("Error de acceso. Intenta con correo.");
+            }
+        };
+
         window.logout = () => signOut(auth);
 
         onAuthStateChanged(auth, async (user) => {
@@ -204,7 +229,7 @@
             const mainUI = document.getElementById('app-screen');
             if (user) {
                 document.getElementById('user-img').src = user.photoURL || "https://ui-avatars.com/api/?name=" + user.email;
-                document.getElementById('user-display-name').innerText = "Conectado como: " + (user.displayName || user.email);
+                document.getElementById('user-display-name').innerText = "Usuario: " + (user.displayName || user.email);
                 loginUI.classList.add('hidden');
                 mainUI.classList.remove('hidden');
                 
@@ -221,7 +246,7 @@
             }
         });
 
-        // --- FIRESTORE & WEBHOOKS ---
+        // --- LOGICA DE NEGOCIO ---
         window.saveSettings = async () => {
             const user = auth.currentUser;
             if(!user) return;
@@ -231,21 +256,21 @@
                     productsUrl: document.getElementById('url-products').value,
                     updatedAt: new Date()
                 });
-                showToast("Sincronizado");
-            } catch (e) { showToast("Error al guardar"); }
+                showToast("Perfil guardado");
+            } catch (e) { showToast("Error Firestore"); }
         };
 
         window.sendToWebhook = async (type) => {
             const url = type === 'prices' ? document.getElementById('url-prices').value : document.getElementById('url-products').value;
-            if(!url) return showToast("Falta URL de Webhook");
+            if(!url) return showToast("Configura el Webhook primero");
             
             const data = type === 'prices' ? {
                 tipo: "Precios",
                 user: auth.currentUser.email,
-                proveedor: document.getElementById('p-prov').value,
+                prov: document.getElementById('p-prov').value,
                 lista: document.getElementById('p-list').value
             } : {
-                tipo: "Producto",
+                tipo: "Item",
                 user: auth.currentUser.email,
                 nombre: document.getElementById('pr-name').value,
                 precio: document.getElementById('pr-cost').value
@@ -254,11 +279,10 @@
             showToast("Enviando...");
             try {
                 await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-                showToast("¡Enviado!");
-            } catch (e) { showToast("Error de envío"); }
+                showToast("¡Sincronizado!");
+            } catch (e) { showToast("Error de red"); }
         };
 
-        // --- UI ---
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
@@ -268,16 +292,13 @@
 
         window.switchTab = (tab) => {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.querySelectorAll('nav button').forEach(b => {
-                b.classList.replace('tab-active', 'text-slate-400');
-                b.classList.remove('font-black');
-            });
+            document.querySelectorAll('nav button').forEach(b => b.classList.replace('tab-active', 'text-slate-400'));
             document.getElementById('tab-' + tab).classList.remove('hidden');
             document.getElementById('tab-btn-' + tab).classList.replace('text-slate-400', 'tab-active');
             lucide.createIcons();
         };
 
-        // PWA Manifest dynamic injection
+        // PWA Manifest dinámico
         const manifest = {
             "name": "AdminCore Cloud",
             "short_name": "AdminCore",
