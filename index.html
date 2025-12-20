@@ -20,10 +20,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
-        .tab-active { color: #4f46e5; font-weight: 800; border-bottom: 3px solid #4f46e5; }
-        .input-field { @apply w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm; }
         .btn-primary { @apply w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2; }
+        .input-field { @apply w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm; }
+        .tab-active { color: #4f46e5; font-weight: 800; border-bottom: 3px solid #4f46e5; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .page-transition { animation: fadeIn 0.3s ease-out; }
     </style>
@@ -48,14 +47,10 @@
                 <p id="auth-title" class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Iniciar Sesión</p>
             </div>
 
-            <!-- Formulario de Email -->
-            <div id="email-form" class="space-y-3">
+            <div class="space-y-3">
                 <input id="auth-email" type="email" placeholder="Correo electrónico" class="input-field">
                 <input id="auth-password" type="password" placeholder="Contraseña" class="input-field">
-                
-                <button id="btn-main-auth" onclick="handleEmailAuth()" class="btn-primary mt-2">
-                    Continuar
-                </button>
+                <button id="btn-main-auth" onclick="handleEmailAuth()" class="btn-primary mt-2">Continuar</button>
             </div>
 
             <div class="relative py-2">
@@ -68,130 +63,81 @@
                 Google Login
             </button>
 
+            <!-- BOTÓN MÁGICO DE INSTALACIÓN (LOGIN) -->
+            <button id="install-btn-auth" onclick="triggerInstall()" class="hidden w-full py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-indigo-100 transition-all">
+                <i data-lucide="download" size="14"></i> Instalar en el dispositivo
+            </button>
+
             <div class="text-center">
-                <button id="btn-toggle-auth" onclick="toggleAuthMode()" class="text-indigo-600 text-xs font-bold hover:underline">
-                    ¿No tienes cuenta? Regístrate
-                </button>
+                <button onclick="toggleAuthMode()" id="btn-toggle-auth" class="text-indigo-600 text-xs font-bold hover:underline">¿No tienes cuenta? Regístrate</button>
             </div>
         </div>
     </div>
 
     <!-- PANTALLA PRINCIPAL (APP) -->
     <div id="app-screen" class="hidden min-h-screen flex flex-col">
-        <!-- Header -->
         <header class="p-6 pb-4 flex items-center justify-between bg-white border-b sticky top-0 z-40">
             <div class="flex items-center gap-2">
-                <div class="bg-indigo-600 p-1.5 rounded-lg text-white shadow-md shadow-indigo-100"><i data-lucide="zap" size="18"></i></div>
+                <div class="bg-indigo-600 p-1.5 rounded-lg text-white"><i data-lucide="zap" size="18"></i></div>
                 <span class="font-black text-xl tracking-tight italic">AdminCore</span>
             </div>
             <div class="flex items-center gap-3">
-                <div class="text-right hidden sm:block">
-                    <p id="user-display-name" class="text-[10px] font-black uppercase text-slate-400"></p>
-                </div>
                 <img id="user-img" class="w-9 h-9 rounded-full border-2 border-indigo-50 bg-slate-100">
                 <button onclick="logout()" class="p-2 text-slate-300 hover:text-rose-500 transition-colors"><i data-lucide="log-out" size="20"></i></button>
             </div>
         </header>
 
-        <!-- Navigation Tabs -->
         <nav class="bg-white border-b flex px-6 sticky top-[77px] z-30">
             <button onclick="switchTab('prices')" id="tab-btn-prices" class="flex-1 py-4 text-xs font-bold uppercase tracking-wider tab-active transition-all">Precios</button>
             <button onclick="switchTab('products')" id="tab-btn-products" class="flex-1 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 transition-all">Items</button>
             <button onclick="switchTab('config')" id="tab-btn-config" class="flex-1 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 transition-all">Perfil</button>
         </nav>
 
-        <!-- Contenido -->
         <main class="flex-1 p-6 max-w-xl mx-auto w-full space-y-6">
             
-            <!-- SECCIÓN PRECIOS -->
             <section id="tab-prices" class="tab-content page-transition space-y-4">
                 <div class="bg-white p-6 rounded-[2.5rem] border shadow-sm space-y-4">
-                    <div class="flex items-center gap-2 mb-2">
-                        <i data-lucide="truck" class="text-indigo-500" size="18"></i>
-                        <h2 class="font-black text-sm uppercase tracking-widest text-slate-500">Logística de Costos</h2>
-                    </div>
                     <input id="p-prov" type="text" placeholder="Nombre del Proveedor" class="input-field">
-                    <textarea id="p-list" rows="8" placeholder="Ejemplo:&#10;Aceite $2500&#10;Arroz $1200..." class="input-field font-mono text-xs"></textarea>
-                    <button onclick="sendToWebhook('prices')" class="btn-primary">
-                        <i data-lucide="send" size="18"></i> Enviar Actualización
-                    </button>
+                    <textarea id="p-list" rows="8" placeholder="Producto $Precio..." class="input-field font-mono text-xs"></textarea>
+                    <button onclick="sendToWebhook('prices')" class="btn-primary"><i data-lucide="send" size="18"></i> Enviar Lista</button>
                 </div>
             </section>
 
-            <!-- SECCIÓN PRODUCTOS -->
             <section id="tab-products" class="tab-content hidden page-transition space-y-4">
-                <div class="bg-white p-6 rounded-[2.5rem] border shadow-sm space-y-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <i data-lucide="package-plus" class="text-emerald-500" size="18"></i>
-                        <h2 class="font-black text-sm uppercase tracking-widest text-slate-500">Alta de Producto</h2>
-                    </div>
+                <div class="bg-white p-6 rounded-[2.5rem] border shadow-sm space-y-5 text-center">
                     <input id="pr-name" type="text" placeholder="Nombre comercial" class="input-field">
-                    <div class="relative">
-                        <span class="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
-                        <input id="pr-cost" type="number" placeholder="Precio final" class="input-field pl-10 font-black text-lg">
-                    </div>
-                    <button onclick="sendToWebhook('products')" class="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-100 active:scale-95 transition-all">
-                        Registrar en Sistema
-                    </button>
+                    <input id="pr-cost" type="number" placeholder="Precio final" class="input-field font-black text-center text-lg">
+                    <button onclick="sendToWebhook('products')" class="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-100">Registrar Ítem</button>
                 </div>
             </section>
 
-            <!-- SECCIÓN CONFIG -->
             <section id="tab-config" class="tab-content hidden page-transition space-y-4">
                 <div class="bg-white p-7 rounded-[2.5rem] border shadow-sm space-y-6">
-                    <div class="text-center">
-                        <h2 class="font-black text-base italic">Configuración de Nube</h2>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sincronización con Webhooks</p>
+                    <h2 class="font-black text-center italic">Ajustes de Nube</h2>
+                    <div class="space-y-3">
+                        <input id="url-prices" type="url" placeholder="Webhook Precios" class="input-field font-mono text-[10px]">
+                        <input id="url-products" type="url" placeholder="Webhook Productos" class="input-field font-mono text-[10px]">
+                        <button id="btn-save-cloud" onclick="saveSettings()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase shadow-xl">Guardar Configuración</button>
                     </div>
-                    
-                    <div class="space-y-4">
-                        <div class="group">
-                            <label class="text-[9px] font-black uppercase text-slate-400 ml-4 mb-1 block">Webhook Precios (POST)</label>
-                            <input id="url-prices" type="url" placeholder="https://hook.us1.make.com/..." class="input-field font-mono text-[10px] text-indigo-600 bg-slate-50/50">
-                        </div>
-                        <div class="group">
-                            <label class="text-[9px] font-black uppercase text-slate-400 ml-4 mb-1 block">Webhook Productos (POST)</label>
-                            <input id="url-products" type="url" placeholder="https://hook.us1.make.com/..." class="input-field font-mono text-[10px] text-indigo-600 bg-slate-50/50">
-                        </div>
-                        
-                        <button id="btn-save-cloud" onclick="saveSettings()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">
-                            Sincronizar Perfil
-                        </button>
-                    </div>
+
+                    <!-- BOTÓN MÁGICO DE INSTALACIÓN (PERFIL) -->
+                    <button id="install-btn-app" onclick="triggerInstall()" class="hidden w-full py-4 bg-indigo-50 text-indigo-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 border border-indigo-100">
+                        <i data-lucide="smartphone" size="16"></i> Instalar Aplicación en Celular
+                    </button>
                 </div>
                 
-                <div class="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100">
-                    <div class="flex items-center gap-4">
-                        <i data-lucide="info" class="text-indigo-600" size="20"></i>
-                        <p class="text-[10px] text-indigo-700 font-bold leading-relaxed">
-                            Los datos de configuración se guardan encriptados en tu perfil de Firestore y son privados para tu cuenta.
-                        </p>
-                    </div>
+                <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                    <p id="user-display-name" class="text-[10px] text-indigo-700 font-bold text-center"></p>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { 
-            getAuth, 
-            GoogleAuthProvider, 
-            signInWithPopup, 
-            onAuthStateChanged, 
-            signOut,
-            signInWithEmailAndPassword,
-            createUserWithEmailAndPassword
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            doc, 
-            setDoc, 
-            getDoc 
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // CONFIGURACIÓN REAL DE FIREBASE (TU PROYECTO)
         const firebaseConfig = {
             apiKey: "AIzaSyA8YJqgIPcruAlkuB99zIwXoWcLgc75bn0",
             authDomain: "admincore-b5f77.firebaseapp.com",
@@ -207,10 +153,32 @@
         const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
 
+        // --- LÓGICA DE INSTALACIÓN PWA ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Mostrar los botones de instalación si Chrome lo permite
+            document.getElementById('install-btn-auth').classList.remove('hidden');
+            document.getElementById('install-btn-app').classList.remove('hidden');
+        });
+
+        window.triggerInstall = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('install-btn-auth').classList.add('hidden');
+                    document.getElementById('install-btn-app').classList.add('hidden');
+                }
+                deferredPrompt = null;
+            } else {
+                showToast("Usa el menú de Chrome: 'Instalar aplicación'");
+            }
+        };
+
+        // --- AUTH ---
         let isRegisterMode = false;
-
-        // --- AUTH LOGIC ---
-
         window.toggleAuthMode = () => {
             isRegisterMode = !isRegisterMode;
             document.getElementById('auth-title').innerText = isRegisterMode ? 'Crear Nueva Cuenta' : 'Iniciar Sesión';
@@ -221,48 +189,30 @@
         window.handleEmailAuth = async () => {
             const email = document.getElementById('auth-email').value;
             const pass = document.getElementById('auth-password').value;
-            
-            if(!email || !pass) { showToast("Completa todos los campos"); return; }
-            if(pass.length < 6) { showToast("Contraseña mínimo 6 caracteres"); return; }
-
-            showToast("Procesando...");
+            if(!email || !pass) return showToast("Faltan datos");
             try {
-                if(isRegisterMode) {
-                    await createUserWithEmailAndPassword(auth, email, pass);
-                    showToast("Cuenta creada con éxito");
-                } else {
-                    await signInWithEmailAndPassword(auth, email, pass);
-                    showToast("Bienvenido de nuevo");
-                }
-            } catch (error) {
-                console.error(error);
-                if(error.code === 'auth/user-not-found') showToast("Usuario no encontrado");
-                else if(error.code === 'auth/wrong-password') showToast("Contraseña incorrecta");
-                else showToast("Error: " + error.message);
-            }
+                if(isRegisterMode) await createUserWithEmailAndPassword(auth, email, pass);
+                else await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) { showToast(error.message); }
         };
 
-        window.loginWithGoogle = async () => {
-            try {
-                await signInWithPopup(auth, googleProvider);
-            } catch (error) {
-                console.error(error);
-                showToast("Error Google: Revisa los popups de tu app");
-            }
-        };
-
+        window.loginWithGoogle = () => signInWithPopup(auth, googleProvider).catch(e => showToast("Error Popup Google"));
         window.logout = () => signOut(auth);
 
         onAuthStateChanged(auth, async (user) => {
             const loginUI = document.getElementById('auth-screen');
             const mainUI = document.getElementById('app-screen');
-            
             if (user) {
                 document.getElementById('user-img').src = user.photoURL || "https://ui-avatars.com/api/?name=" + user.email;
-                document.getElementById('user-display-name').innerText = user.displayName || user.email.split('@')[0];
+                document.getElementById('user-display-name').innerText = "Conectado como: " + (user.displayName || user.email);
                 loginUI.classList.add('hidden');
                 mainUI.classList.remove('hidden');
-                await loadCloudSettings(user.uid);
+                
+                const docSnap = await getDoc(doc(db, "users", user.uid));
+                if (docSnap.exists()) {
+                    document.getElementById('url-prices').value = docSnap.data().pricesUrl || "";
+                    document.getElementById('url-products').value = docSnap.data().productsUrl || "";
+                }
                 lucide.createIcons();
             } else {
                 loginUI.classList.remove('hidden');
@@ -271,69 +221,44 @@
             }
         });
 
-        // --- FIRESTORE LOGIC ---
-
-        async function loadCloudSettings(uid) {
-            try {
-                const docSnap = await getDoc(doc(db, "users", uid));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.getElementById('url-prices').value = data.pricesUrl || "";
-                    document.getElementById('url-products').value = data.productsUrl || "";
-                }
-            } catch (e) { console.error("Error Firestore:", e); }
-        }
-
+        // --- FIRESTORE & WEBHOOKS ---
         window.saveSettings = async () => {
             const user = auth.currentUser;
             if(!user) return;
-            const btn = document.getElementById('btn-save-cloud');
-            btn.innerText = "SINCRONIZANDO...";
             try {
                 await setDoc(doc(db, "users", user.uid), {
                     pricesUrl: document.getElementById('url-prices').value,
                     productsUrl: document.getElementById('url-products').value,
                     updatedAt: new Date()
                 });
-                showToast("Datos sincronizados");
+                showToast("Sincronizado");
             } catch (e) { showToast("Error al guardar"); }
-            btn.innerText = "SINCRONIZAR PERFIL";
         };
-
-        // --- WEBHOOK LOGIC ---
 
         window.sendToWebhook = async (type) => {
             const url = type === 'prices' ? document.getElementById('url-prices').value : document.getElementById('url-products').value;
-            if(!url) { showToast("Configura el Webhook en Perfil"); return; }
-
-            const payload = type === 'prices' ? {
-                tipo: "Actualización Precios",
+            if(!url) return showToast("Falta URL de Webhook");
+            
+            const data = type === 'prices' ? {
+                tipo: "Precios",
+                user: auth.currentUser.email,
                 proveedor: document.getElementById('p-prov').value,
-                lista: document.getElementById('p-list').value,
-                user: auth.currentUser.email
+                lista: document.getElementById('p-list').value
             } : {
-                tipo: "Alta Producto",
+                tipo: "Producto",
+                user: auth.currentUser.email,
                 nombre: document.getElementById('pr-name').value,
-                precio: document.getElementById('pr-cost').value,
-                user: auth.currentUser.email
+                precio: document.getElementById('pr-cost').value
             };
 
             showToast("Enviando...");
             try {
-                await fetch(url, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                showToast("¡Enviado con éxito!");
-            } catch (err) {
-                showToast("Error de conexión");
-            }
+                await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+                showToast("¡Enviado!");
+            } catch (e) { showToast("Error de envío"); }
         };
 
-        // --- UI HELPERS ---
-
+        // --- UI ---
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
@@ -343,12 +268,12 @@
 
         window.switchTab = (tab) => {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.querySelectorAll('nav button').forEach(b => b.classList.remove('tab-active'));
-            document.querySelectorAll('nav button').forEach(b => b.classList.add('text-slate-400'));
-            
+            document.querySelectorAll('nav button').forEach(b => {
+                b.classList.replace('tab-active', 'text-slate-400');
+                b.classList.remove('font-black');
+            });
             document.getElementById('tab-' + tab).classList.remove('hidden');
-            document.getElementById('tab-btn-' + tab).classList.add('tab-active');
-            document.getElementById('tab-btn-' + tab).classList.remove('text-slate-400');
+            document.getElementById('tab-btn-' + tab).classList.replace('text-slate-400', 'tab-active');
             lucide.createIcons();
         };
 
@@ -367,13 +292,10 @@
                 "purpose": "any maskable"
             }]
         };
-        const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-        document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
-
-        // Simple Service Worker
+        document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'})));
+        
         if ('serviceWorker' in navigator) {
-            const swCode = `self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`;
-            const swBlob = new Blob([swCode], {type: 'application/javascript'});
+            const swBlob = new Blob([`self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`], {type: 'application/javascript'});
             navigator.serviceWorker.register(URL.createObjectURL(swBlob));
         }
     </script>
